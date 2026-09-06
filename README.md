@@ -1,1 +1,480 @@
-# Baufinanz
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baufinanzierungs-Rechner | Profi-Modell</title>
+    <!-- Chart.js für die interaktiven Diagramme -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 6px;
+        }
+
+        p.subtitle {
+            color: #64748b;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        /* Input Grid */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .credit-box {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .credit-box h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1.05rem;
+            color: #2563eb;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+
+        .form-group input {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .effektiv-info {
+            font-size: 0.8rem;
+            color: #059669;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Metrics Dashboard */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background-color: #f1f5f9;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #2563eb;
+        }
+
+        .metric-label {
+            font-size: 0.82rem;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .slider-group {
+            background-color: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input[type=range] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #cbd5e1;
+            outline: none;
+            accent-color: #2563eb;
+            cursor: pointer;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1>Baufinanzierung Rechner mit Einzelentschuldung</h1>
+        <p class="subtitle">Modellierung inkl. Restschuld, Bereitstellungszinsen & separater Laufzeit-Analyse</p>
+
+        <!-- Eingabefelder -->
+        <div class="input-grid">
+            <!-- Hauptdarlehen -->
+            <div class="credit-box">
+                <h3>1. Hauptdarlehen</h3>
+                <div class="form-group">
+                    <label>Kreditsumme (€)</label>
+                    <input type="number" id="bankKredit" value="400000" step="5000">
+                </div>
+                <div class="form-group">
+                    <label>Sollzinssatz p.a. (%)</label>
+                    <input type="number" id="bankZins" value="3.99" step="0.01">
+                    <div class="effektiv-info" id="bankEffektiv">Effektivzins: 4.06 %</div>
+                </div>
+                <div class="form-group">
+                    <label>Monatliche Rate ab Tilgungsbeginn (€)</label>
+                    <input type="number" id="bankRate" value="2100" step="50">
+                </div>
+                <div class="form-group">
+                    <label>Bereitstellungszinsfreie Zeit (Monate)</label>
+                    <input type="number" id="bankFreiMonate" value="15" step="1">
+                </div>
+                <div class="form-group">
+                    <label>Bereitstellungszins (% pro Monat)</label>
+                    <input type="number" id="bankBereitZins" value="0.25" step="0.01">
+                </div>
+            </div>
+
+            <!-- KfW Darlehen -->
+            <div class="credit-box">
+                <h3 style="color: #059669;">2. KfW-Darlehen (z. B. 297)</h3>
+                <div class="form-group">
+                    <label>Kreditsumme (€)</label>
+                    <input type="number" id="kfwKredit" value="100000" step="5000">
+                </div>
+                <div class="form-group">
+                    <label>Sollzinssatz p.a. (%)</label>
+                    <input type="number" id="kfwZins" value="2.19" step="0.01">
+                    <div class="effektiv-info" id="kfwEffektiv">Effektivzins: 2.21 %</div>
+                </div>
+                <div class="form-group">
+                    <label>Monatliche Rate ab Tilgungsbeginn (€)</label>
+                    <input type="number" id="kfwRate" value="347.78" step="10">
+                </div>
+                <div class="form-group">
+                    <label>Tilgungsfreie Zeit (Monate)</label>
+                    <input type="number" id="kfwTilgungsfreiMonate" value="12" step="1">
+                </div>
+                <div class="form-group">
+                    <label>Bereitstellungszinsfreie Zeit (Monate)</label>
+                    <input type="number" id="kfwFreiMonate" value="12" step="1">
+                </div>
+                <div class="form-group">
+                    <label>Bereitstellungszins (% pro Monat)</label>
+                    <input type="number" id="kfwBereitZins" value="0.15" step="0.01">
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Kennzahlen -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Misch-Soll / Effektiv</div>
+                <div class="metric-value" id="mischZins">3.63 % / 3.69 %</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Restschuld nach 10 J.</div>
+                <div class="metric-value" id="restschuld10">366.966 €</div>
+            </div>
+            <div class="metric-card" style="border-left-color: #2563eb;">
+                <div class="metric-label">Hauptdarlehen frei in</div>
+                <div class="metric-value" id="bankPayoffTime" style="color: #2563eb;">25 J. 2 M.</div>
+            </div>
+            <div class="metric-card" style="border-left-color: #059669;">
+                <div class="metric-label">KfW frei in</div>
+                <div class="metric-value" id="kfwPayoffTime" style="color: #059669;">35 J. 0 M.</div>
+            </div>
+        </div>
+
+        <!-- Regler Sondertilgung -->
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Jährliche Sondertilgung (Hauptdarlehen):</span>
+                <span id="sondertilgungVal" style="color: #2563eb;">0 € / Jahr</span>
+            </div>
+            <input type="range" id="sondertilgungSlider" min="0" max="20000" step="500" value="0">
+        </div>
+    </div>
+
+    <!-- Chart 1 -->
+    <div class="card">
+        <div class="section-title">1. Verlauf der Restschuld während der Zinsbindung (10 Jahre)</div>
+        <div class="chart-container">
+            <canvas id="chart10Years"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2 -->
+    <div class="card">
+        <div class="section-title">2. Vollständiger Entschuldungsverlauf (bis 0 € Restschuld)</div>
+        <div class="chart-container">
+            <canvas id="chartFull"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    function formatEUR(val) {
+        return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+    }
+
+    function calcEffektivzins(sollzinsPa) {
+        let r = sollzinsPa / 100;
+        let eff = Math.pow(1 + r / 12, 12) - 1;
+        return (eff * 100).toFixed(2);
+    }
+
+    function formatTime(months) {
+        if (months >= 600) return "> 50 Jahre";
+        let y = Math.floor(months / 12);
+        let m = months % 12;
+        return `${y} J. ${m} M.`;
+    }
+
+    function simulate() {
+        let bankKredit = parseFloat(document.getElementById('bankKredit').value) || 0;
+        let bankZins = (parseFloat(document.getElementById('bankZins').value) || 0) / 100;
+        let bankRate = parseFloat(document.getElementById('bankRate').value) || 0;
+
+        let kfwKredit = parseFloat(document.getElementById('kfwKredit').value) || 0;
+        let kfwZins = (parseFloat(document.getElementById('kfwZins').value) || 0) / 100;
+        let kfwRate = parseFloat(document.getElementById('kfwRate').value) || 0;
+        let kfwTilgungsfreiMonate = parseInt(document.getElementById('kfwTilgungsfreiMonate').value) || 0;
+
+        let sondertilgungPa = parseFloat(document.getElementById('sondertilgungSlider').value) || 0;
+
+        // Effektivzinsen anzeigen
+        document.getElementById('bankEffektiv').innerText = `Effektivzins: ${calcEffektivzins(bankZins * 100)} %`;
+        document.getElementById('kfwEffektiv').innerText = `Effektivzins: ${calcEffektivzins(kfwZins * 100)} %`;
+
+        // Mischzins berechnen
+        let gesamtKredit = bankKredit + kfwKredit;
+        if (gesamtKredit > 0) {
+            let mischSoll = ((bankKredit * bankZins) + (kfwKredit * kfwZins)) / gesamtKredit * 100;
+            let mischEff = ((bankKredit * parseFloat(calcEffektivzins(bankZins * 100))) + (kfwKredit * parseFloat(calcEffektivzins(kfwZins * 100)))) / gesamtKredit;
+            document.getElementById('mischZins').innerText = `${mischSoll.toFixed(2)} % / ${mischEff.toFixed(2)} %`;
+        }
+
+        let bankRest = bankKredit;
+        let kfwRest = kfwKredit;
+        
+        let timeline10Years = [gesamtKredit];
+        let timelineFull = [gesamtKredit];
+        
+        let totalMonths = 0;
+        let rest10Years = 0;
+
+        let bankDoneMonth = 0;
+        let kfwDoneMonth = 0;
+
+        while ((bankRest > 0 || kfwRest > 0) && totalMonths < 600) {
+            totalMonths++;
+            
+            // 1. Hauptdarlehen
+            if (bankRest > 0) {
+                let zinsBank = bankRest * (bankZins / 12);
+                let tilgungBank = bankRate - zinsBank;
+                if (totalMonths % 12 === 0) {
+                    tilgungBank += sondertilgungPa;
+                }
+                bankRest = Math.max(0, bankRest - tilgungBank);
+                if (bankRest === 0 && bankDoneMonth === 0) {
+                    bankDoneMonth = totalMonths;
+                }
+            }
+
+            // 2. KfW Kredit
+            if (kfwRest > 0) {
+                let zinsKfw = kfwRest * (kfwZins / 12);
+                let tilgungKfw = 0;
+                if (totalMonths > kfwTilgungsfreiMonate) {
+                    tilgungKfw = kfwRate - zinsKfw;
+                }
+                kfwRest = Math.max(0, kfwRest - tilgungKfw);
+                if (kfwRest === 0 && kfwDoneMonth === 0) {
+                    kfwDoneMonth = totalMonths;
+                }
+            }
+
+            let gesamtRest = bankRest + kfwRest;
+
+            if (totalMonths % 12 === 0) {
+                if (totalMonths <= 120) {
+                    timeline10Years.push(gesamtRest);
+                }
+                timelineFull.push(gesamtRest);
+            }
+
+            if (totalMonths === 120) {
+                rest10Years = gesamtRest;
+            }
+        }
+
+        return {
+            rest10Years: rest10Years,
+            bankDoneMonth: bankDoneMonth || totalMonths,
+            kfwDoneMonth: kfwDoneMonth || totalMonths,
+            timeline10Years: timeline10Years,
+            timelineFull: timelineFull
+        };
+    }
+
+    let chart10 = null;
+    let chartFull = null;
+
+    function initCharts() {
+        if (typeof Chart === 'undefined') return;
+
+        let ctx10 = document.getElementById('chart10Years').getContext('2d');
+        let ctxFull = document.getElementById('chartFull').getContext('2d');
+
+        chart10 = new Chart(ctx10, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 11}, (_, i) => `Jahr ${i}`),
+                datasets: [{
+                    label: 'Gesamtrestschuld (€)',
+                    data: [],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { ticks: { callback: value => value.toLocaleString('de-DE') + ' €' } }
+                }
+            }
+        });
+
+        chartFull = new Chart(ctxFull, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Entschuldungsverlauf (€)',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { ticks: { callback: value => value.toLocaleString('de-DE') + ' €' } }
+                }
+            }
+        });
+    }
+
+    function updateApp() {
+        let sondertilgung = parseFloat(document.getElementById('sondertilgungSlider').value) || 0;
+        document.getElementById('sondertilgungVal').innerText = formatEUR(sondertilgung) + ' / Jahr';
+
+        let res = simulate();
+
+        document.getElementById('restschuld10').innerText = formatEUR(res.rest10Years);
+        document.getElementById('bankPayoffTime').innerText = formatTime(res.bankDoneMonth);
+        document.getElementById('kfwPayoffTime').innerText = formatTime(res.kfwDoneMonth);
+
+        if (chart10 && chartFull) {
+            chart10.data.datasets[0].data = res.timeline10Years;
+            chart10.update();
+
+            chartFull.data.labels = Array.from({length: res.timelineFull.length}, (_, i) => `Jahr ${i}`);
+            chartFull.data.datasets[0].data = res.timelineFull;
+            chartFull.update();
+        }
+    }
+
+    const inputIds = [
+        'bankKredit', 'bankZins', 'bankRate', 'bankFreiMonate', 'bankBereitZins',
+        'kfwKredit', 'kfwZins', 'kfwRate', 'kfwTilgungsfreiMonate', 'kfwFreiMonate', 'kfwBereitZins',
+        'sondertilgungSlider'
+    ];
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initCharts();
+        updateApp();
+
+        inputIds.forEach(id => {
+            let el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', updateApp);
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
