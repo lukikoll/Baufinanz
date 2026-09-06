@@ -168,8 +168,8 @@
 
 <div class="container">
     <div class="card">
-        <h1>Baufinanzierung Rechner mit Einzelentschuldung</h1>
-        <p class="subtitle">Modellierung inkl. Restschuld, Bereitstellungszinsen & separater Laufzeit-Analyse</p>
+        <h1>Baufinanzierung Rechner mit Anlaufphase</h1>
+        <p class="subtitle">Modellierung inkl. tilgungsfreier Bau-/Anfangsphase, Bereitstellungszinsen & Restschuld</p>
 
         <!-- Eingabefelder -->
         <div class="input-grid">
@@ -186,8 +186,12 @@
                     <div class="effektiv-info" id="bankEffektiv">Effektivzins: 4.06 %</div>
                 </div>
                 <div class="form-group">
-                    <label>Monatliche Rate ab Tilgungsbeginn (€)</label>
+                    <label>Monatliche Rate ab Tilgungsstart (€)</label>
                     <input type="number" id="bankRate" value="2100" step="50">
+                </div>
+                <div class="form-group">
+                    <label style="color: #d97706;">Tilgungsfreie Anlaufphase (Monate)</label>
+                    <input type="number" id="bankTilgungsfreiMonate" value="9" step="1" title="0,75 Jahre = 9 Monate (in dieser Zeit wird nur Zins bezahlt)">
                 </div>
                 <div class="form-group">
                     <label>Bereitstellungszinsfreie Zeit (Monate)</label>
@@ -212,12 +216,12 @@
                     <div class="effektiv-info" id="kfwEffektiv">Effektivzins: 2.21 %</div>
                 </div>
                 <div class="form-group">
-                    <label>Monatliche Rate ab Tilgungsbeginn (€)</label>
+                    <label>Monatliche Rate ab Tilgungsstart (€)</label>
                     <input type="number" id="kfwRate" value="347.78" step="10">
                 </div>
                 <div class="form-group">
-                    <label>Tilgungsfreie Zeit (Monate)</label>
-                    <input type="number" id="kfwTilgungsfreiMonate" value="12" step="1">
+                    <label style="color: #d97706;">Tilgungsfreie Anlaufphase (Monate)</label>
+                    <input type="number" id="kfwTilgungsfreiMonate" value="12" step="1" title="Zeitraum ohne Tilgung">
                 </div>
                 <div class="form-group">
                     <label>Bereitstellungszinsfreie Zeit (Monate)</label>
@@ -299,6 +303,7 @@
         let bankKredit = parseFloat(document.getElementById('bankKredit').value) || 0;
         let bankZins = (parseFloat(document.getElementById('bankZins').value) || 0) / 100;
         let bankRate = parseFloat(document.getElementById('bankRate').value) || 0;
+        let bankTilgungsfreiMonate = parseInt(document.getElementById('bankTilgungsfreiMonate').value) || 0;
 
         let kfwKredit = parseFloat(document.getElementById('kfwKredit').value) || 0;
         let kfwZins = (parseFloat(document.getElementById('kfwZins').value) || 0) / 100;
@@ -337,10 +342,16 @@
             // 1. Hauptdarlehen
             if (bankRest > 0) {
                 let zinsBank = bankRest * (bankZins / 12);
-                let tilgungBank = bankRate - zinsBank;
-                if (totalMonths % 12 === 0) {
-                    tilgungBank += sondertilgungPa;
+                let tilgungBank = 0;
+                
+                // Erst tilgen, wenn die Anlaufphase vorbei ist
+                if (totalMonths > bankTilgungsfreiMonate) {
+                    tilgungBank = bankRate - zinsBank;
+                    if (totalMonths % 12 === 0) {
+                        tilgungBank += sondertilgungPa;
+                    }
                 }
+                
                 bankRest = Math.max(0, bankRest - tilgungBank);
                 if (bankRest === 0 && bankDoneMonth === 0) {
                     bankDoneMonth = totalMonths;
@@ -351,9 +362,12 @@
             if (kfwRest > 0) {
                 let zinsKfw = kfwRest * (kfwZins / 12);
                 let tilgungKfw = 0;
+                
+                // Erst tilgen, wenn die Anlaufphase vorbei ist
                 if (totalMonths > kfwTilgungsfreiMonate) {
                     tilgungKfw = kfwRate - zinsKfw;
                 }
+                
                 kfwRest = Math.max(0, kfwRest - tilgungKfw);
                 if (kfwRest === 0 && kfwDoneMonth === 0) {
                     kfwDoneMonth = totalMonths;
@@ -458,7 +472,7 @@
     }
 
     const inputIds = [
-        'bankKredit', 'bankZins', 'bankRate', 'bankFreiMonate', 'bankBereitZins',
+        'bankKredit', 'bankZins', 'bankRate', 'bankTilgungsfreiMonate', 'bankFreiMonate', 'bankBereitZins',
         'kfwKredit', 'kfwZins', 'kfwRate', 'kfwTilgungsfreiMonate', 'kfwFreiMonate', 'kfwBereitZins',
         'sondertilgungSlider'
     ];
